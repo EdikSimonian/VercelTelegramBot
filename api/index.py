@@ -6,15 +6,15 @@ from openai import OpenAI
 from upstash_redis import Redis
 
 # ── Configuration ──────────────────────────────────────────────────────────────
-TELEGRAM_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
-AI_API_KEY     = os.environ["AI_API_KEY"]
-UPSTASH_URL     = os.environ["UPSTASH_REDIS_REST_URL"]
-UPSTASH_TOKEN   = os.environ["UPSTASH_REDIS_REST_TOKEN"]
+TELEGRAM_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"].strip()
+AI_API_KEY     = os.environ["AI_API_KEY"].strip()
+UPSTASH_URL    = os.environ["UPSTASH_REDIS_REST_URL"].strip()
+UPSTASH_TOKEN  = os.environ["UPSTASH_REDIS_REST_TOKEN"].strip()
 
-MODEL         = os.environ.get("AI_MODEL", "llama3.1-8b")
-AI_BASE_URL   = os.environ.get("AI_BASE_URL", "https://api.cerebras.ai/v1")
+AI_BASE_URL   = os.environ.get("AI_BASE_URL", "https://api.cerebras.ai/v1").strip()
+MODEL         = os.environ.get("AI_MODEL", "llama3.1-8b").strip()
 SYSTEM_PROMPT = "You are a helpful assistant."
-MAX_HISTORY   = 20  # number of messages kept per user (10 conversation turns)
+MAX_HISTORY   = 20  # messages kept per user (10 conversation turns)
 
 # ── Clients ────────────────────────────────────────────────────────────────────
 bot   = telebot.TeleBot(TELEGRAM_TOKEN, threaded=False)
@@ -22,7 +22,7 @@ ai    = OpenAI(base_url=AI_BASE_URL, api_key=AI_API_KEY)
 redis = Redis(url=UPSTASH_URL, token=UPSTASH_TOKEN)
 app   = Flask(__name__)
 
-# ── Redis helpers ──────────────────────────────────────────────────────────────
+# ── History helpers ────────────────────────────────────────────────────────────
 def get_history(user_id: int) -> list:
     data = redis.get(f"chat:{user_id}")
     return json.loads(data) if data else []
@@ -48,22 +48,18 @@ def ask_ai(user_id: int, user_message: str) -> str:
     save_history(user_id, history)
     return reply
 
-# ── Telegram command handlers ──────────────────────────────────────────────────
+# ── Commands ───────────────────────────────────────────────────────────────────
 @bot.message_handler(commands=["start"])
 def cmd_start(message):
-    bot.reply_to(
-        message,
-        "Hello! I'm your AI assistant.\nSend me any message to get started.\n\nUse /help to see available commands.",
-    )
+    bot.reply_to(message, "Hello! I'm your AI assistant. Send me a message to get started.\n\nUse /help to see available commands.")
 
 @bot.message_handler(commands=["help"])
 def cmd_help(message):
-    bot.reply_to(
-        message,
-        "/start  — welcome message\n"
-        "/help   — show this message\n"
-        "/reset  — clear conversation history\n"
-        "/about  — about this bot",
+    bot.reply_to(message,
+        "/start — welcome message\n"
+        "/help  — show this message\n"
+        "/reset — clear conversation history\n"
+        "/about — about this bot"
     )
 
 @bot.message_handler(commands=["reset"])
@@ -73,10 +69,7 @@ def cmd_reset(message):
 
 @bot.message_handler(commands=["about"])
 def cmd_about(message):
-    bot.reply_to(
-        message,
-        f"Model  : {MODEL}\nStorage: Upstash Redis\nHosting: Vercel",
-    )
+    bot.reply_to(message, f"Model  : {MODEL}\nStorage: Upstash Redis\nHosting: Vercel")
 
 # ── Message handler ────────────────────────────────────────────────────────────
 @bot.message_handler(func=lambda m: True)
@@ -88,7 +81,7 @@ def handle_message(message):
         print(f"Error: {e}")
         bot.reply_to(message, f"Error: {e}")
 
-# ── Webhook endpoint ───────────────────────────────────────────────────────────
+# ── Webhook ────────────────────────────────────────────────────────────────────
 @app.route("/api/webhook", methods=["POST"])
 def webhook():
     update = telebot.types.Update.de_json(request.get_data(as_text=True))
