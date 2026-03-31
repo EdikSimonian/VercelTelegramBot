@@ -1,6 +1,6 @@
 # Vercel Telegram Bot — Starter Template
 
-A minimal Python Telegram bot running on Vercel (free tier) with persistent conversation memory via Upstash Redis and AI powered by Google Gemini 2.0 Flash.
+A minimal Python Telegram bot running on Vercel (free tier) with persistent conversation memory via Upstash Redis and AI powered by Google Gemini 2.5 Flash.
 
 **Stack:** Python · Flask · pyTelegramBotAPI · OpenAI SDK · Upstash Redis · Vercel
 
