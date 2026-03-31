@@ -1,6 +1,6 @@
 import json
 from bot.clients import ai
-from bot.config import MODEL, SYSTEM_PROMPT, BRAVE_API_KEY
+from bot.config import MODEL, SYSTEM_PROMPT, TAVILY_API_KEY
 from bot.history import get_history, save_history
 
 # Tool definition — only active when BRAVE_API_KEY is set
@@ -19,7 +19,7 @@ TOOLS = [
             },
         },
     }
-] if BRAVE_API_KEY else []
+] if TAVILY_API_KEY else []
 
 
 def ask_ai(user_id: int, user_message: str) -> str:

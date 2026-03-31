@@ -1,18 +1,18 @@
 from unittest.mock import patch, MagicMock
 
 
-def make_brave_response(results):
+def make_tavily_response(results):
     mock_resp = MagicMock()
-    mock_resp.json.return_value = {"web": {"results": results}}
+    mock_resp.json.return_value = {"results": results}
     return mock_resp
 
 
 def test_web_search_returns_formatted_results():
     results = [
-        {"title": "Python Docs", "description": "Official docs", "url": "https://python.org"},
-        {"title": "Real Python", "description": "Tutorials", "url": "https://realpython.com"},
+        {"title": "Python Docs", "content": "Official docs", "url": "https://python.org"},
+        {"title": "Real Python", "content": "Tutorials", "url": "https://realpython.com"},
     ]
-    with patch("bot.search.requests.get", return_value=make_brave_response(results)):
+    with patch("bot.search.requests.post", return_value=make_tavily_response(results)):
         from bot.search import web_search
         output = web_search("python tutorials")
         assert "Python Docs" in output
@@ -21,14 +21,15 @@ def test_web_search_returns_formatted_results():
 
 
 def test_web_search_no_results():
-    with patch("bot.search.requests.get", return_value=make_brave_response([])):
+    with patch("bot.search.requests.post", return_value=make_tavily_response([])):
         from bot.search import web_search
         assert web_search("xkqzwmf") == "No results found."
 
 
-def test_web_search_uses_strict_safesearch():
-    with patch("bot.search.requests.get", return_value=make_brave_response([])) as mock_get:
+def test_web_search_sends_correct_payload():
+    with patch("bot.search.requests.post", return_value=make_tavily_response([])) as mock_post:
         from bot.search import web_search
         web_search("test query")
-        params = mock_get.call_args[1]["params"]
-        assert params["safesearch"] == "strict"
+        payload = mock_post.call_args[1]["json"]
+        assert payload["query"] == "test query"
+        assert payload["max_results"] == 5

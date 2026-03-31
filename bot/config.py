@@ -13,7 +13,7 @@ UPSTASH_URL   = os.environ["UPSTASH_REDIS_REST_URL"].strip()
 UPSTASH_TOKEN = os.environ["UPSTASH_REDIS_REST_TOKEN"].strip()
 
 # Search
-BRAVE_API_KEY = os.environ.get("BRAVE_API_KEY", "").strip()
+TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "").strip()
 
 # App
 SYSTEM_PROMPT = (

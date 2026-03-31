@@ -17,7 +17,7 @@ A minimal Python Telegram bot running on Vercel (free tier) with persistent conv
 | [Upstash](https://upstash.com) | Redis for conversation memory | 10,000 req/day |
 | [Vercel](https://vercel.com) | Hosting the bot | 100GB bandwidth/month |
 | [GitHub](https://github.com) | Source code (Vercel deploys from here) | Always free |
-| [Brave Search](https://api.search.brave.com) | Web search *(optional)* | 2,000 searches/month |
+| [Tavily](https://tavily.com) | Web search *(optional)* | 1,000 searches/month |
 
 ---
 
@@ -132,12 +132,12 @@ vercel --prod
 
 The bot can search the web automatically when it needs current information.
 
-1. Go to [api.search.brave.com](https://api.search.brave.com) and sign up (free, no credit card)
+1. Go to [tavily.com](https://tavily.com) and sign up (free, no credit card)
 2. Click **API Keys** → **Create API Key**
 3. Copy the key and add it to Vercel:
 
 ```bash
-vercel env add BRAVE_API_KEY --value "your_key_here" --force --yes
+vercel env add TAVILY_API_KEY --value "your_key_here" --force --yes
 vercel --prod
 ```
 
@@ -214,7 +214,7 @@ Copy the `https://...ngrok-free.app` URL and re-run the `setWebhook` curl from S
 | Bot personality / instructions | Edit `SYSTEM_PROMPT` in `bot/config.py` |
 | AI model | Set `AI_MODEL` env var (e.g. `llama3.1-8b`, `gpt-oss-120b`) |
 | AI provider | Set `AI_BASE_URL` env var (any OpenAI-compatible endpoint) |
-| Enable web search | Set `BRAVE_API_KEY` env var (from api.search.brave.com) |
+| Enable web search | Set `TAVILY_API_KEY` env var (from tavily.com) |
 | Conversation memory length | Edit `MAX_HISTORY` in `bot/config.py` |
 | Add a new command | Add a handler in `bot/handlers.py` |
 

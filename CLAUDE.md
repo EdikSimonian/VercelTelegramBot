@@ -66,7 +66,7 @@ VercelTelegramBot/
 | `UPSTASH_REDIS_REST_TOKEN` | Yes | — | From Upstash console |
 | `AI_BASE_URL` | No | `https://api.cerebras.ai/v1` | Any OpenAI-compatible base URL |
 | `AI_MODEL` | No | `llama3.1-8b` | Model name for the provider |
-| `BRAVE_API_KEY` | No | — | From api.search.brave.com — enables web search when set |
+| `TAVILY_API_KEY` | No | — | From tavily.com — enables web search when set |
 | `RATE_LIMIT` | No | `50` | Max messages per user per day |
 
 All env vars are read in `bot/config.py`. `.strip()` is called on every value — this prevents subtle bugs from trailing newlines when setting vars via CLI pipes.
@@ -94,17 +94,17 @@ The bot uses the OpenAI Python SDK pointed at any OpenAI-compatible endpoint. Sw
 
 ## Web search
 
-Web search is powered by the Brave Search API (`bot/search.py`) and integrated via AI tool calling (`bot/ai.py`).
+Web search is powered by the Tavily Search API (`bot/search.py`) and integrated via AI tool calling (`bot/ai.py`).
 
-- **Opt-in:** only active when `BRAVE_API_KEY` is set. Without it the bot works normally with no code changes needed
+- **Opt-in:** only active when `TAVILY_API_KEY` is set. Without it the bot works normally with no code changes needed
 - **Safe search:** always `strict` — hardcoded in `bot/search.py`, not configurable
 - **How it works:** when the AI decides it needs current information, it calls the `web_search` tool automatically. The user does not need a special command
 - **Free tier:** 2,000 searches/month, no credit card required
-- **Getting a key:** go to `api.search.brave.com` → sign up → API Keys → Create API Key
+- **Getting a key:** go to `tavily.com` → sign up → API Keys → Create API Key
 
 **Adding the key to Vercel:**
 ```bash
-vercel env add BRAVE_API_KEY --value "your_key" --force --yes
+vercel env add TAVILY_API_KEY --value "your_key" --force --yes
 vercel --prod
 ```
 
