@@ -17,7 +17,7 @@ SYSTEM_PROMPT = "You are a helpful assistant."
 MAX_HISTORY   = 20  # number of messages kept per user (10 conversation turns)
 
 # ── Clients ────────────────────────────────────────────────────────────────────
-bot   = telebot.TeleBot(TELEGRAM_TOKEN)
+bot   = telebot.TeleBot(TELEGRAM_TOKEN, threaded=False)
 ai    = OpenAI(base_url=GEMINI_BASE, api_key=GOOGLE_API_KEY)
 redis = Redis(url=UPSTASH_URL, token=UPSTASH_TOKEN)
 app   = Flask(__name__)
@@ -84,7 +84,8 @@ def handle_message(message):
     try:
         reply = ask_ai(message.from_user.id, message.text)
         bot.reply_to(message, reply)
-    except Exception:
+    except Exception as e:
+        print(f"Error: {e}")
         bot.reply_to(message, "Something went wrong. Please try again.")
 
 # ── Webhook endpoint ───────────────────────────────────────────────────────────
