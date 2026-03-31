@@ -1,6 +1,6 @@
 # Vercel Telegram Bot — Starter Template
 
-A minimal Python Telegram bot running on Vercel (free tier) with persistent conversation memory via Upstash Redis and AI powered by Google Gemini 2.5 Flash.
+A minimal Python Telegram bot running on Vercel (free tier) with persistent conversation memory via Upstash Redis and AI powered by Cerebras (llama-3.3-70b).
 
 **Stack:** Python · Flask · pyTelegramBotAPI · OpenAI SDK · Upstash Redis · Vercel
 
@@ -13,7 +13,7 @@ A minimal Python Telegram bot running on Vercel (free tier) with persistent conv
 | Service | Purpose | Free tier |
 |---|---|---|
 | [Telegram](https://telegram.org) | The bot platform | Always free |
-| [Google AI Studio](https://aistudio.google.com) | Gemini AI API | 250 req/day, 10 req/min |
+| [Cerebras](https://cloud.cerebras.ai) | AI API (llama-3.3-70b) | 1M tokens/day, 30 req/min |
 | [Upstash](https://upstash.com) | Redis for conversation memory | 10,000 req/day |
 | [Vercel](https://vercel.com) | Hosting the bot | 100GB bandwidth/month |
 | [GitHub](https://github.com) | Source code (Vercel deploys from here) | Always free |
@@ -30,13 +30,14 @@ A minimal Python Telegram bot running on Vercel (free tier) with persistent conv
 
 ---
 
-## Step 2 — Get a Google Gemini API key
+## Step 2 — Get a Cerebras API key
 
-1. Go to [aistudio.google.com](https://aistudio.google.com)
-2. Sign in with your Google account
-3. Click **Get API key** → **Create API key**
-4. Copy the key (looks like `AIzaSy...`)
-5. Save it — you will need it later
+1. Go to [cloud.cerebras.ai](https://cloud.cerebras.ai) and sign up (free, no credit card)
+2. Verify your email and log in
+3. Click your profile icon (top right) → **API Keys**
+4. Click **Create new API key**, give it a name
+5. Copy the key (looks like `csk-...`)
+6. Save it — you will need it later
 
 ---
 
@@ -109,7 +110,7 @@ Run each command below and paste the corresponding value when prompted:
 
 ```bash
 vercel env add TELEGRAM_BOT_TOKEN
-vercel env add GOOGLE_API_KEY
+vercel env add CEREBRAS_API_KEY
 vercel env add UPSTASH_REDIS_REST_URL
 vercel env add UPSTASH_REDIS_REST_TOKEN
 ```
