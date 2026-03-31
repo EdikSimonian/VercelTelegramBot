@@ -1,81 +1,152 @@
 # Vercel Telegram Bot — Starter Template
 
-A minimal Python Telegram bot running on Vercel (free tier) with persistent conversation memory via Upstash Redis and AI responses via LiteLLM.
+A minimal Python Telegram bot running on Vercel (free tier) with persistent conversation memory via Upstash Redis and AI powered by Google Gemini 2.0 Flash.
 
 **Stack:** Python · Flask · pyTelegramBotAPI · OpenAI SDK · Upstash Redis · Vercel
 
----
-
-## Prerequisites
-
-- [Vercel account](https://vercel.com) (free)
-- [Upstash account](https://upstash.com) (free)
-- Telegram account
-- LiteLLM API key (provided by your instructor)
+**All services used are free. No credit card required.**
 
 ---
 
-## Setup
+## What you will need to create
 
-### 1. Create a Telegram bot
+| Service | Purpose | Free tier |
+|---|---|---|
+| [Telegram](https://telegram.org) | The bot platform | Always free |
+| [Google AI Studio](https://aistudio.google.com) | Gemini AI API | 1,500 req/day, 1M tokens/day |
+| [Upstash](https://upstash.com) | Redis for conversation memory | 10,000 req/day |
+| [Vercel](https://vercel.com) | Hosting the bot | 100GB bandwidth/month |
+| [GitHub](https://github.com) | Source code (Vercel deploys from here) | Always free |
 
-1. Open Telegram and message [@BotFather](https://t.me/BotFather)
-2. Send `/newbot` and follow the prompts
-3. Copy the **bot token** (looks like `123456:ABC-DEF...`)
+---
 
-### 2. Create an Upstash Redis database
+## Step 1 — Create a Telegram bot
 
-1. Go to [console.upstash.com](https://console.upstash.com)
-2. Click **Create Database** → choose a region → create
-3. Copy the **REST URL** and **REST Token** from the database details page
+1. Open Telegram and search for **@BotFather**
+2. Send `/newbot`
+3. Choose a name (e.g. `My AI Bot`) and a username ending in `bot` (e.g. `myai_bot`)
+4. BotFather will reply with a **bot token** that looks like `7123456789:AAF...`
+5. Save this token — you will need it later
 
-### 3. Deploy to Vercel
+---
+
+## Step 2 — Get a Google Gemini API key
+
+1. Go to [aistudio.google.com](https://aistudio.google.com)
+2. Sign in with your Google account
+3. Click **Get API key** → **Create API key**
+4. Copy the key (looks like `AIzaSy...`)
+5. Save it — you will need it later
+
+---
+
+## Step 3 — Create an Upstash Redis database
+
+1. Go to [upstash.com](https://upstash.com) and sign up (free, no credit card)
+2. Click **Create Database**
+3. Give it a name, choose the region closest to you, click **Create**
+4. On the database page, scroll to **REST API** section
+5. Copy the **UPSTASH_REDIS_REST_URL** and **UPSTASH_REDIS_REST_TOKEN**
+6. Save both — you will need them later
+
+---
+
+## Step 4 — Set up GitHub and clone the repo
+
+1. Create a [GitHub account](https://github.com) if you don't have one
+2. Go to the template repo and click **Fork** (top right) to copy it to your account
+3. Clone your fork to your computer:
 
 ```bash
-# Install Vercel CLI
+git clone https://github.com/<your-username>/VercelTelegramBot.git
+cd VercelTelegramBot
+```
+
+---
+
+## Step 5 — Create a Vercel account and install the CLI
+
+1. Go to [vercel.com](https://vercel.com) and sign up using your GitHub account
+2. Install Node.js from [nodejs.org](https://nodejs.org) if you don't have it (required for the Vercel CLI)
+3. Install the Vercel CLI:
+
+```bash
 npm install -g vercel
+```
 
-# Clone this repo
-git clone <repo-url>
-cd vercel-telegram
+4. Log in to Vercel from your terminal:
 
-# Deploy
+```bash
+vercel login
+```
+
+Choose **Continue with GitHub** and follow the browser prompt.
+
+---
+
+## Step 6 — Deploy to Vercel
+
+From inside the project folder:
+
+```bash
 vercel
 ```
 
-When prompted, accept the defaults. After deploy, note your project URL (e.g., `https://your-project.vercel.app`).
+When prompted:
+- **Set up and deploy?** → `Y`
+- **Which scope?** → select your account
+- **Link to existing project?** → `N`
+- **Project name?** → press Enter to accept default
+- **In which directory is your code?** → press Enter (`.`)
 
-### 4. Set environment variables on Vercel
+After it finishes, Vercel will print your project URL, e.g. `https://vercel-telegram-bot.vercel.app`. Save this URL.
+
+---
+
+## Step 7 — Add environment variables to Vercel
+
+Run each command below and paste the corresponding value when prompted:
 
 ```bash
 vercel env add TELEGRAM_BOT_TOKEN
-vercel env add LITELLM_API_KEY
+vercel env add GOOGLE_API_KEY
 vercel env add UPSTASH_REDIS_REST_URL
 vercel env add UPSTASH_REDIS_REST_TOKEN
 ```
 
-Paste the values from steps 1–2 when prompted. Then redeploy to apply:
+For each one, select **Production**, **Preview**, and **Development** when asked which environments to apply to.
+
+Then redeploy to apply the variables:
 
 ```bash
 vercel --prod
 ```
 
-### 5. Register the Telegram webhook
+---
 
-Replace `<YOUR_BOT_TOKEN>` and `<YOUR_VERCEL_URL>` and run once:
+## Step 8 — Register the Telegram webhook
+
+This tells Telegram where to send messages. Run the command below, replacing the placeholders:
 
 ```bash
 curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=https://<YOUR_VERCEL_URL>/api/webhook"
 ```
 
-You should see `{"ok":true,"result":true}`.
+Example:
+```bash
+curl "https://api.telegram.org/bot7123456789:AAF.../setWebhook?url=https://vercel-telegram-bot.vercel.app/api/webhook"
+```
+
+You should see: `{"ok":true,"result":true}`
+
+**Your bot is now live.** Open Telegram, find your bot, and send it a message.
 
 ---
 
 ## Project structure
 
 ```
-vercel-telegram/
+VercelTelegramBot/
 ├── api/
 │   └── webhook.py      # All bot logic lives here
 ├── .env.example        # Copy to .env for local dev (never commit .env)
@@ -91,11 +162,17 @@ vercel-telegram/
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env   # fill in your values
+cp .env.example .env    # fill in your real values
 flask --app api/webhook run --port 3000
 ```
 
-For local testing with Telegram, use [ngrok](https://ngrok.com) to expose your local server, then re-run the `setWebhook` command with your ngrok URL.
+To test with Telegram locally, install [ngrok](https://ngrok.com), then:
+
+```bash
+ngrok http 3000
+```
+
+Copy the `https://...ngrok-free.app` URL and re-run the `setWebhook` curl from Step 8 with that URL instead.
 
 ---
 
@@ -115,6 +192,6 @@ For local testing with Telegram, use [ngrok](https://ngrok.com) to expose your l
 | Command | Description |
 |---|---|
 | `/start` | Welcome message |
-| `/help` | List commands |
+| `/help` | List all commands |
 | `/reset` | Clear your conversation history |
 | `/about` | Show model and hosting info |

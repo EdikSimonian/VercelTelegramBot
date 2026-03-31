@@ -6,19 +6,19 @@ from openai import OpenAI
 from upstash_redis import Redis
 
 # ── Configuration ──────────────────────────────────────────────────────────────
-TELEGRAM_TOKEN  = os.environ["TELEGRAM_BOT_TOKEN"]
-LITELLM_API_KEY = os.environ["LITELLM_API_KEY"]
-UPSTASH_URL     = os.environ["UPSTASH_REDIS_REST_URL"]
-UPSTASH_TOKEN   = os.environ["UPSTASH_REDIS_REST_TOKEN"]
+TELEGRAM_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
+GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"]
+UPSTASH_URL    = os.environ["UPSTASH_REDIS_REST_URL"]
+UPSTASH_TOKEN  = os.environ["UPSTASH_REDIS_REST_TOKEN"]
 
-MODEL         = "glm-5"
-LITELLM_BASE  = "https://ai.simonian.online/v1"
+MODEL         = "gemini-2.0-flash"
+GEMINI_BASE   = "https://generativelanguage.googleapis.com/v1beta/openai/"
 SYSTEM_PROMPT = "You are a helpful assistant."
 MAX_HISTORY   = 20  # number of messages kept per user (10 conversation turns)
 
 # ── Clients ────────────────────────────────────────────────────────────────────
 bot   = telebot.TeleBot(TELEGRAM_TOKEN)
-ai    = OpenAI(base_url=LITELLM_BASE, api_key=LITELLM_API_KEY)
+ai    = OpenAI(base_url=GEMINI_BASE, api_key=GOOGLE_API_KEY)
 redis = Redis(url=UPSTASH_URL, token=UPSTASH_TOKEN)
 app   = Flask(__name__)
 
@@ -75,7 +75,7 @@ def cmd_reset(message):
 def cmd_about(message):
     bot.reply_to(
         message,
-        f"Model : {MODEL}\nProxy : {LITELLM_BASE}\nStorage: Upstash Redis\nHosting: Vercel",
+        f"Model  : {MODEL}\nStorage: Upstash Redis\nHosting: Vercel",
     )
 
 # ── Message handler ────────────────────────────────────────────────────────────
