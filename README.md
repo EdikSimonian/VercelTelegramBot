@@ -6,6 +6,8 @@ A minimal Python Telegram bot running on Vercel (free tier) with persistent conv
 
 **All services used are free. No credit card required.**
 
+> **Live demo:** [@vercel_telegram_ed_bot](https://t.me/vercel_telegram_ed_bot) on Telegram
+
 ---
 
 ## What you will need to create
