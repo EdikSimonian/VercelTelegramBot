@@ -67,6 +67,7 @@ VercelTelegramBot/
 | `AI_BASE_URL` | No | `https://api.cerebras.ai/v1` | Any OpenAI-compatible base URL |
 | `AI_MODEL` | No | `llama3.1-8b` | Model name for the provider |
 | `TAVILY_API_KEY` | No | — | From tavily.com — enables web search when set |
+| `WEBHOOK_SECRET` | No | — | Random string to verify requests come from Telegram |
 | `RATE_LIMIT` | No | `50` | Max messages per user per day |
 
 All env vars are read in `bot/config.py`. `.strip()` is called on every value — this prevents subtle bugs from trailing newlines when setting vars via CLI pipes.
@@ -94,12 +95,14 @@ The bot uses the OpenAI Python SDK pointed at any OpenAI-compatible endpoint. Sw
 
 ## Web search
 
-Web search is powered by the Tavily Search API (`bot/search.py`) and integrated via AI tool calling (`bot/ai.py`).
+Web search is powered by the Tavily Search API (`bot/search.py`) and injected as context in `bot/ai.py`.
 
 - **Opt-in:** only active when `TAVILY_API_KEY` is set. Without it the bot works normally with no code changes needed
 - **Safe search:** always `strict` — hardcoded in `bot/search.py`, not configurable
-- **How it works:** when the AI decides it needs current information, it calls the `web_search` tool automatically. The user does not need a special command
-- **Free tier:** 2,000 searches/month, no credit card required
+- **How it works:** `needs_search()` checks the user message for keywords (today, latest, news, etc.). If matched, Tavily is called and results are prepended as a system message before the AI call
+- **Caching:** results are cached in Redis for 10 minutes by query hash — duplicate queries skip Tavily entirely
+- **User visibility:** replies include `_[Web search used]_` when search results were injected
+- **Free tier:** 1,000 searches/month, no credit card required
 - **Getting a key:** go to `tavily.com` → sign up → API Keys → Create API Key
 
 **Adding the key to Vercel:**
@@ -107,6 +110,27 @@ Web search is powered by the Tavily Search API (`bot/search.py`) and integrated 
 vercel env add TAVILY_API_KEY --value "your_key" --force --yes
 vercel --prod
 ```
+
+---
+
+## Webhook verification
+
+To block spoofed requests, set a random secret and pass it when registering the webhook:
+
+```bash
+vercel env add WEBHOOK_SECRET --value "your_random_secret" --force --yes
+vercel --prod
+curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<VERCEL_URL>/api/webhook&secret_token=your_random_secret"
+```
+
+When `WEBHOOK_SECRET` is set, `api/index.py` checks the `X-Telegram-Bot-Api-Secret-Token` header on every request and returns 403 if it does not match. If the variable is not set, verification is skipped (backwards compatible).
+
+---
+
+## Reliability
+
+- **AI retry logic:** `_call_ai()` in `bot/ai.py` retries up to 3 times with exponential backoff (1s, 2s) before raising. Handles transient network errors and rate limit spikes
+- **Redis graceful degradation:** all Redis calls in `bot/history.py` and `bot/rate_limit.py` are wrapped in try-except. If Redis is down: history falls back to empty (stateless mode), rate limiting is skipped
 
 ---
 
@@ -136,6 +160,12 @@ Do not touch `api/index.py` for new features.
 
 ## Running tests
 
+```bash
+make install   # creates .venv and installs dependencies
+make test      # runs pytest -v
+```
+
+Or manually:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -184,3 +214,4 @@ curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<VERCEL_URL>/ap
 - **Cerebras model names** — use `llama3.1-8b` not `llama-3.1-8b`. The dot format is required
 - **Telegram 4096 char limit** — `send_reply()` in `bot/helpers.py` handles splitting automatically
 - **Group chats** — bot only responds when `@mentioned` or replied to. The mention is stripped from the message before sending to AI
+- **Webhook secret must match** — if `WEBHOOK_SECRET` is set, the same value must be passed as `secret_token` in `setWebhook`. Mismatch causes all updates to return 403 and the bot goes silent

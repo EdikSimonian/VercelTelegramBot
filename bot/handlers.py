@@ -39,10 +39,11 @@ def handle_message(message):
     if is_rate_limited(message.from_user.id):
         bot.reply_to(message, f"You've reached the daily limit of {RATE_LIMIT} messages. Try again tomorrow.")
         return
-    bot.send_chat_action(message.chat.id, "typing")
-    text = message.text.replace(f"@{BOT_INFO.username}", "").strip()
+    text = (message.text or "").replace(f"@{BOT_INFO.username}", "").strip()
     try:
+        bot.send_chat_action(message.chat.id, "typing")
         reply = ask_ai(message.from_user.id, text)
+        bot.send_chat_action(message.chat.id, "typing")
         send_reply(message, reply)
     except Exception as e:
         print(f"Error: {e}")

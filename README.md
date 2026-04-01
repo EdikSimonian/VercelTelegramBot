@@ -143,6 +143,30 @@ vercel --prod
 
 Safe search is always set to **strict**. Without this key the bot works normally — web search is simply disabled.
 
+When search is used, the bot appends `_[Web search used]_` to its reply so you know the answer is based on live data. Results are cached for 10 minutes, so repeated questions don't burn your quota.
+
+---
+
+## Step 7c — Secure the webhook *(optional but recommended)*
+
+Without this, anyone who knows your webhook URL can send fake messages to your bot.
+
+1. Generate a random secret (any string works, e.g. `openssl rand -hex 16`)
+2. Add it to Vercel:
+
+```bash
+vercel env add WEBHOOK_SECRET --value "your_random_secret" --force --yes
+vercel --prod
+```
+
+3. Re-register the webhook, appending `&secret_token=your_random_secret`:
+
+```bash
+curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=https://<YOUR_VERCEL_URL>/api/webhook&secret_token=your_random_secret"
+```
+
+The bot will now reject any request that does not include the correct secret header.
+
 ---
 
 ## Step 8 — Register the Telegram webhook
@@ -215,8 +239,19 @@ Copy the `https://...ngrok-free.app` URL and re-run the `setWebhook` curl from S
 | AI model | Set `AI_MODEL` env var (e.g. `llama3.1-8b`, `gpt-oss-120b`) |
 | AI provider | Set `AI_BASE_URL` env var (any OpenAI-compatible endpoint) |
 | Enable web search | Set `TAVILY_API_KEY` env var (from tavily.com) |
+| Secure the webhook | Set `WEBHOOK_SECRET` env var (see Step 7c) |
 | Conversation memory length | Edit `MAX_HISTORY` in `bot/config.py` |
 | Add a new command | Add a handler in `bot/handlers.py` |
+
+---
+
+## Running tests locally
+
+```bash
+make install   # set up virtual environment and install dependencies
+make test      # run all tests
+make deploy    # deploy to Vercel production
+```
 
 ---
 

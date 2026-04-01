@@ -1,7 +1,8 @@
 import os
 
 # Telegram
-TELEGRAM_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"].strip()
+TELEGRAM_TOKEN  = os.environ["TELEGRAM_BOT_TOKEN"].strip()
+WEBHOOK_SECRET  = os.environ.get("WEBHOOK_SECRET", "").strip()  # optional, but recommended
 
 # AI provider
 AI_API_KEY  = os.environ["AI_API_KEY"].strip()
@@ -19,8 +20,9 @@ TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "").strip()
 SYSTEM_PROMPT = (
     "You are a knowledgeable and concise AI assistant. "
     "Answer clearly and directly. Avoid unnecessary filler. "
-    "If you are unsure about something, say so rather than guessing. "
-    "Keep responses appropriately brief for a chat interface."
+    "Keep responses appropriately brief for a chat interface. "
+    "When web search results are provided, treat them as current factual information and use them to answer the user's question. "
+    "Do not dispute or second-guess search results based on your training data — your training data may be outdated."
 )
 MAX_HISTORY = 20    # messages kept per user (10 conversation turns)
 RATE_LIMIT  = int(os.environ.get("RATE_LIMIT", "50"))  # max messages per user per day
