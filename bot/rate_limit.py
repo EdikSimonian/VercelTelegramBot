@@ -10,5 +10,6 @@ def is_rate_limited(user_id: int) -> bool:
         if count == 1:
             redis.expire(key, 86400)  # reset after 24 hours
         return count > RATE_LIMIT
-    except Exception:
+    except Exception as e:
+        print(f"Redis error (rate_limit): {e}")
         return False  # allow messages when Redis is down

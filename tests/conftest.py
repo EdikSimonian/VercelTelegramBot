@@ -15,12 +15,20 @@ os.environ["UPSTASH_REDIS_REST_TOKEN"] = "fake_redis_token"
 # ── Mock external packages ─────────────────────────────────────────────────────
 mock_bot_instance = MagicMock()
 mock_bot_instance.get_me.return_value = MagicMock(id=42, username="testbot")
+# Decorators must pass through so handler functions remain callable
+mock_bot_instance.message_handler.return_value = lambda f: f
 
 mock_telebot = MagicMock()
 mock_telebot.TeleBot.return_value = mock_bot_instance
+
+# Flask mock: make @app.route() pass through too
+mock_flask = MagicMock()
+mock_flask_app = MagicMock()
+mock_flask_app.route.return_value = lambda f: f
+mock_flask.Flask.return_value = mock_flask_app
 
 sys.modules["telebot"]       = mock_telebot
 sys.modules["telebot.types"] = MagicMock()
 sys.modules["openai"]        = MagicMock()
 sys.modules["upstash_redis"] = MagicMock()
-sys.modules["flask"]         = MagicMock()
+sys.modules["flask"]         = mock_flask

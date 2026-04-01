@@ -29,12 +29,14 @@ VercelTelegramBot/
 │   ├── helpers.py        # send_reply() and should_respond() utilities
 │   └── handlers.py       # All Telegram command and message handlers — add new commands here
 ├── tests/
-│   ├── conftest.py       # Mocks env vars and external packages (telebot, openai, upstash_redis)
-│   ├── test_ai.py        # needs_search() keyword detection tests
+│   ├── conftest.py       # Mocks env vars and external packages (telebot, openai, upstash_redis, flask)
+│   ├── test_ai.py        # needs_search(), _call_ai() retry, ask_ai() orchestration + source citations
+│   ├── test_handlers.py  # handle_message() — typing, error handling, rate limit, None text
 │   ├── test_helpers.py
-│   ├── test_history.py
-│   ├── test_rate_limit.py
-│   └── test_search.py    # web_search() including cache hit/miss tests
+│   ├── test_history.py   # includes graceful degradation (Redis down) tests
+│   ├── test_rate_limit.py # includes graceful degradation test
+│   ├── test_search.py    # web_search() including cache hit/miss and Redis failure tests
+│   └── test_webhook.py   # webhook secret validation (accept, reject, skip)
 ├── .github/
 │   └── workflows/
 │       └── ci.yml        # Runs pytest on every push and pull request

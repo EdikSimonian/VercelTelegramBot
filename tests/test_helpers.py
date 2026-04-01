@@ -20,7 +20,7 @@ def test_send_reply_short_text():
             from bot.helpers import send_reply
             msg = make_message()
             send_reply(msg, "Hello!")
-            mock_bot.reply_to.assert_called_once_with(msg, "Hello!")
+            mock_bot.reply_to.assert_called_once_with(msg, "Hello!", parse_mode="Markdown")
 
 
 def test_send_reply_splits_long_text():

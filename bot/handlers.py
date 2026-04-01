@@ -46,5 +46,5 @@ def handle_message(message):
         bot.send_chat_action(message.chat.id, "typing")
         send_reply(message, reply)
     except Exception as e:
-        print(f"Error: {e}")
-        bot.reply_to(message, f"Error: {e}")
+        print(f"Error in handle_message: {e}")
+        bot.reply_to(message, "Something went wrong. Please try again.")

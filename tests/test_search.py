@@ -71,3 +71,17 @@ def test_web_search_returns_cached_result():
         assert text == "cached result"
         assert sources[0]["url"] == "https://example.com"
         mock_post.assert_not_called()
+
+
+def test_web_search_works_when_redis_cache_fails():
+    results = [
+        {"title": "Result", "content": "Content", "url": "https://example.com"},
+    ]
+    with patch("bot.search.requests.post", return_value=make_tavily_response(results)), \
+         patch("bot.search.redis") as mock_redis:
+        mock_redis.get.side_effect = Exception("connection refused")
+        mock_redis.set.side_effect = Exception("connection refused")
+        from bot.search import web_search
+        text, sources = web_search("test")
+        assert "Result" in text
+        assert sources[0]["url"] == "https://example.com"

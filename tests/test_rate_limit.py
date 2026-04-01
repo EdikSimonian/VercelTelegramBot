@@ -31,3 +31,10 @@ def test_sets_expiry_on_first_use():
         from bot.rate_limit import is_rate_limited
         is_rate_limited(123)
         mock_redis.expire.assert_called_once()
+
+
+def test_allows_when_redis_down():
+    with patch("bot.rate_limit.redis") as mock_redis:
+        mock_redis.incr.side_effect = Exception("connection refused")
+        from bot.rate_limit import is_rate_limited
+        assert is_rate_limited(123) is False

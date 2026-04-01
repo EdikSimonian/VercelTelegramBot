@@ -24,6 +24,7 @@ SYSTEM_PROMPT = (
     "When web search results are provided, treat them as current factual information and use them to answer the user's question. "
     "Do not dispute or second-guess search results based on your training data — your training data may be outdated."
 )
-MAX_HISTORY = 20    # messages kept per user (10 conversation turns)
-RATE_LIMIT  = int(os.environ.get("RATE_LIMIT", "50"))  # max messages per user per day
-MAX_MSG_LEN = 4096  # Telegram's character limit per message
+MAX_HISTORY     = 20        # messages kept per user (10 conversation turns)
+HISTORY_TTL     = 2592000   # conversation history expires after 30 days (seconds)
+RATE_LIMIT      = int(os.environ.get("RATE_LIMIT", "50"))  # max messages per user per day
+MAX_MSG_LEN     = 4096      # Telegram's character limit per message

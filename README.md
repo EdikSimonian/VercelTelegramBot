@@ -208,10 +208,12 @@ VercelTelegramBot/
 ├── tests/
 │   ├── conftest.py       # Mocks for running tests without real API keys
 │   ├── test_ai.py
+│   ├── test_handlers.py
 │   ├── test_helpers.py
 │   ├── test_history.py
 │   ├── test_rate_limit.py
-│   └── test_search.py
+│   ├── test_search.py
+│   └── test_webhook.py
 ├── .github/
 │   └── workflows/
 │       └── ci.yml        # Runs tests on every push and pull request
