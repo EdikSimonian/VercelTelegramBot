@@ -1,7 +1,7 @@
-import time
-from bot.clients import ai
-from bot.config import MODEL, SYSTEM_PROMPT, TAVILY_API_KEY
+from bot.config import SYSTEM_PROMPT, TAVILY_API_KEY
 from bot.history import get_history, save_history
+from bot.preferences import get_provider
+from bot.providers import generate
 
 # Keywords that suggest the query needs current/real-time information
 SEARCH_TRIGGERS = [
@@ -16,27 +16,18 @@ def needs_search(text: str) -> bool:
     return any(trigger in text_lower for trigger in SEARCH_TRIGGERS)
 
 
-def _call_ai(messages: list, retries: int = 3) -> object:
-    """Call the AI API with exponential backoff retry on failure."""
-    for attempt in range(retries):
-        try:
-            return ai.chat.completions.create(model=MODEL, messages=messages)
-        except Exception as e:
-            if attempt == retries - 1:
-                raise
-            wait = 2 ** attempt  # 1s, 2s, 4s
-            print(f"AI call failed (attempt {attempt + 1}/{retries}): {e} — retrying in {wait}s")
-            time.sleep(wait)
-
-
 def ask_ai(user_id: int, user_message: str) -> str:
     history = get_history(user_id)
     history.append({"role": "user", "content": user_message})
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
+    provider = get_provider(user_id)
+
     sources = []
-    if TAVILY_API_KEY and needs_search(user_message):
+    # Skip web search for the HF provider — ArmGPT is Armenian-only and
+    # English search results would just pollute its prompt.
+    if provider != "hf" and TAVILY_API_KEY and needs_search(user_message):
         try:
             from bot.search import web_search
             results, sources = web_search(user_message)
@@ -54,8 +45,7 @@ def ask_ai(user_id: int, user_message: str) -> str:
 
     messages += history
 
-    response = _call_ai(messages)
-    reply = response.choices[0].message.content
+    reply = generate(user_id, messages)
 
     if sources:
         citations = "\n".join(f"• [{s['title']}]({s['url']})" for s in sources)

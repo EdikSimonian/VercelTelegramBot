@@ -4,3 +4,4 @@ __pycache__/
 .vercel
 .venv
 .pytest_cache
+.env*.local

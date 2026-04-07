@@ -28,68 +28,23 @@ def test_needs_search_case_insensitive():
     assert needs_search("What is TODAY's weather?") is True
 
 
-# ── _call_ai retry logic ──────────────────────────────────────────────────────
-
-def test_call_ai_retries_on_failure():
-    mock_response = MagicMock()
-    with patch("bot.ai.ai") as mock_ai, \
-         patch("bot.ai.time.sleep") as mock_sleep:
-        mock_ai.chat.completions.create.side_effect = [
-            Exception("network error"),
-            mock_response,
-        ]
-        from bot.ai import _call_ai
-        result = _call_ai([{"role": "user", "content": "hi"}])
-        assert result == mock_response
-        assert mock_ai.chat.completions.create.call_count == 2
-        mock_sleep.assert_called_once_with(1)
-
-
-def test_call_ai_raises_after_max_retries():
-    with patch("bot.ai.ai") as mock_ai, \
-         patch("bot.ai.time.sleep"):
-        mock_ai.chat.completions.create.side_effect = Exception("persistent error")
-        from bot.ai import _call_ai
-        try:
-            _call_ai([{"role": "user", "content": "hi"}], retries=3)
-            assert False, "Should have raised"
-        except Exception as e:
-            assert str(e) == "persistent error"
-        assert mock_ai.chat.completions.create.call_count == 3
-
-
-def test_call_ai_succeeds_first_try():
-    mock_response = MagicMock()
-    with patch("bot.ai.ai") as mock_ai, \
-         patch("bot.ai.time.sleep") as mock_sleep:
-        mock_ai.chat.completions.create.return_value = mock_response
-        from bot.ai import _call_ai
-        result = _call_ai([{"role": "user", "content": "hi"}])
-        assert result == mock_response
-        mock_sleep.assert_not_called()
-
-
 # ── ask_ai orchestration ──────────────────────────────────────────────────────
 
 def test_ask_ai_returns_reply():
-    mock_response = MagicMock()
-    mock_response.choices[0].message.content = "Hello there!"
-    with patch("bot.ai.ai") as mock_ai, \
+    with patch("bot.ai.generate", return_value="Hello there!"), \
          patch("bot.ai.get_history", return_value=[]), \
-         patch("bot.ai.save_history"):
-        mock_ai.chat.completions.create.return_value = mock_response
+         patch("bot.ai.save_history"), \
+         patch("bot.ai.get_provider", return_value="openai"):
         from bot.ai import ask_ai
         reply = ask_ai(123, "hi")
         assert reply == "Hello there!"
 
 
 def test_ask_ai_saves_history():
-    mock_response = MagicMock()
-    mock_response.choices[0].message.content = "reply"
-    with patch("bot.ai.ai") as mock_ai, \
+    with patch("bot.ai.generate", return_value="reply"), \
          patch("bot.ai.get_history", return_value=[]), \
-         patch("bot.ai.save_history") as mock_save:
-        mock_ai.chat.completions.create.return_value = mock_response
+         patch("bot.ai.save_history") as mock_save, \
+         patch("bot.ai.get_provider", return_value="openai"):
         from bot.ai import ask_ai
         ask_ai(123, "hi")
         mock_save.assert_called_once()
@@ -99,16 +54,14 @@ def test_ask_ai_saves_history():
 
 
 def test_ask_ai_appends_sources_when_search_used():
-    mock_response = MagicMock()
-    mock_response.choices[0].message.content = "Here is the news."
     sources = [{"title": "BBC", "url": "https://bbc.com"}]
-    with patch("bot.ai.ai") as mock_ai, \
+    with patch("bot.ai.generate", return_value="Here is the news."), \
          patch("bot.ai.get_history", return_value=[]), \
          patch("bot.ai.save_history"), \
+         patch("bot.ai.get_provider", return_value="openai"), \
          patch("bot.ai.TAVILY_API_KEY", "fake_key"), \
          patch("bot.ai.needs_search", return_value=True), \
          patch("bot.search.web_search", return_value=("search text", sources)):
-        mock_ai.chat.completions.create.return_value = mock_response
         from bot.ai import ask_ai
         reply = ask_ai(123, "latest news")
         assert "**Sources:**" in reply
@@ -116,12 +69,36 @@ def test_ask_ai_appends_sources_when_search_used():
 
 
 def test_ask_ai_no_sources_for_general_question():
-    mock_response = MagicMock()
-    mock_response.choices[0].message.content = "Paris."
-    with patch("bot.ai.ai") as mock_ai, \
+    with patch("bot.ai.generate", return_value="Paris."), \
          patch("bot.ai.get_history", return_value=[]), \
-         patch("bot.ai.save_history"):
-        mock_ai.chat.completions.create.return_value = mock_response
+         patch("bot.ai.save_history"), \
+         patch("bot.ai.get_provider", return_value="openai"):
         from bot.ai import ask_ai
         reply = ask_ai(123, "what is the capital of France?")
         assert "Sources" not in reply
+
+
+def test_ask_ai_skips_search_for_hf_provider():
+    """HF (ArmGPT) is Armenian-only; don't pollute it with English search results."""
+    sources = [{"title": "BBC", "url": "https://bbc.com"}]
+    with patch("bot.ai.generate", return_value="Հայաստան"), \
+         patch("bot.ai.get_history", return_value=[]), \
+         patch("bot.ai.save_history"), \
+         patch("bot.ai.get_provider", return_value="hf"), \
+         patch("bot.ai.TAVILY_API_KEY", "fake_key"), \
+         patch("bot.ai.needs_search", return_value=True), \
+         patch("bot.search.web_search", return_value=("search text", sources)) as mock_search:
+        from bot.ai import ask_ai
+        reply = ask_ai(123, "latest news")
+        mock_search.assert_not_called()
+        assert "Sources" not in reply
+
+
+def test_ask_ai_passes_user_id_to_generate():
+    with patch("bot.ai.generate", return_value="hi") as mock_gen, \
+         patch("bot.ai.get_history", return_value=[]), \
+         patch("bot.ai.save_history"), \
+         patch("bot.ai.get_provider", return_value="openai"):
+        from bot.ai import ask_ai
+        ask_ai(456, "hello")
+        assert mock_gen.call_args[0][0] == 456

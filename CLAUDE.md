@@ -22,7 +22,9 @@ VercelTelegramBot/
 │   ├── __init__.py
 │   ├── config.py         # All env vars and constants (edit this to configure the bot)
 │   ├── clients.py        # Instantiates bot, ai, redis clients (do not edit unless adding a client)
-│   ├── ai.py             # ask_ai(), _call_ai() with retry, keyword-based search injection, source citations
+│   ├── ai.py             # ask_ai() orchestration — history, search injection, source citations
+│   ├── providers.py      # Provider dispatch: OpenAI-compatible (with retry) or HF Gradio space
+│   ├── preferences.py    # Per-user provider preference stored in Redis
 │   ├── search.py         # Tavily web search with Redis result caching
 │   ├── history.py        # get/save/clear conversation history in Redis (graceful degradation)
 │   ├── rate_limit.py     # Per-user daily message rate limiting via Redis (graceful degradation)
@@ -74,6 +76,7 @@ VercelTelegramBot/
 | `AI_BASE_URL` | No | `https://api.cerebras.ai/v1` | Any OpenAI-compatible base URL |
 | `AI_MODEL` | No | `llama3.1-8b` | Model name for the provider |
 | `TAVILY_API_KEY` | No | — | From tavily.com — enables web search when set |
+| `HF_SPACE_ID` | No | — | Hugging Face Gradio space ID (e.g. `edisimon/armgpt-demo`) — enables `/model` command when set |
 | `WEBHOOK_SECRET` | No | — | Random string to verify requests come from Telegram |
 | `RATE_LIMIT` | No | `50` | Max messages per user per day |
 
@@ -117,6 +120,33 @@ Web search is powered by the Tavily Search API (`bot/search.py`) and injected as
 vercel env add TAVILY_API_KEY --value "your_key" --force --yes
 vercel --prod
 ```
+
+---
+
+## Multi-provider support
+
+The bot can dispatch requests to one of two providers per user:
+
+1. **`openai`** (default) — any OpenAI-compatible endpoint via `AI_BASE_URL` / `AI_API_KEY` / `AI_MODEL`. Has retry logic (3 attempts with exponential backoff).
+2. **`hf`** (optional) — a Hugging Face Gradio space set via `HF_SPACE_ID`. Called via `gradio_client.Client(...).predict(prompt, length, temperature, top_k)`. No retry (HF is slow).
+
+**When `HF_SPACE_ID` is empty, the bot works exactly as before** — the `/model` command is not registered and users always hit the OpenAI-compatible endpoint.
+
+**When `HF_SPACE_ID` is set**, users get a `/model` command:
+- `/model` — show current provider + options
+- `/model openai` — switch to the OpenAI-compatible endpoint
+- `/model hf` — switch to the HF space
+
+Preferences are stored in Redis under `provider:{user_id}` (no TTL). If Redis is down, the bot falls back to `DEFAULT_PROVIDER` (`"openai"`).
+
+**HF provider caveats** — the current target (`edisimon/armgpt-demo`, ArmGPT) has:
+- No messages array — `bot/providers.py::_flatten_messages` flattens the last 3 turns into a `"User: ...\nAssistant: ..."` prompt string
+- No system prompt support — the system prompt is dropped entirely for HF
+- Hardcoded knobs — length=150, temperature=0.8, top_k=40
+- No web search — `bot/ai.py::ask_ai` skips Tavily injection when provider is `hf` (the ArmGPT model is Armenian-only; English search results would just pollute the prompt)
+- Cold start on free HF tier can take 30–60s while the model downloads
+
+To switch to a different HF space, change `HF_SPACE_ID` and confirm the target space exposes a `/generate` API with the same signature, or adapt `_call_hf` in `bot/providers.py`.
 
 ---
 

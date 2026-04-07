@@ -27,8 +27,9 @@ mock_flask_app = MagicMock()
 mock_flask_app.route.return_value = lambda f: f
 mock_flask.Flask.return_value = mock_flask_app
 
-sys.modules["telebot"]       = mock_telebot
-sys.modules["telebot.types"] = MagicMock()
-sys.modules["openai"]        = MagicMock()
-sys.modules["upstash_redis"] = MagicMock()
-sys.modules["flask"]         = mock_flask
+sys.modules["telebot"]         = mock_telebot
+sys.modules["telebot.types"]   = MagicMock()
+sys.modules["openai"]          = MagicMock()
+sys.modules["upstash_redis"]   = MagicMock()
+sys.modules["flask"]           = mock_flask
+sys.modules["gradio_client"]   = MagicMock()

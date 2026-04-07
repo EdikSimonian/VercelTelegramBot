@@ -1,8 +1,9 @@
 from bot.clients import bot, BOT_INFO
-from bot.config import MODEL, RATE_LIMIT
+from bot.config import MODEL, RATE_LIMIT, HF_SPACE_ID
 from bot.ai import ask_ai
 from bot.helpers import send_reply, should_respond
 from bot.history import clear_history
+from bot.preferences import get_provider, set_provider
 from bot.rate_limit import is_rate_limited
 
 
@@ -13,12 +14,15 @@ def cmd_start(message):
 
 @bot.message_handler(commands=["help"])
 def cmd_help(message):
-    bot.send_message(message.chat.id,
-        "/start — welcome message\n"
-        "/help  — show this message\n"
-        "/reset — clear conversation history\n"
-        "/about — about this bot"
-    )
+    lines = [
+        "/start — welcome message",
+        "/help  — show this message",
+        "/reset — clear conversation history",
+        "/about — about this bot",
+    ]
+    if HF_SPACE_ID:
+        lines.append("/model — switch AI provider")
+    bot.send_message(message.chat.id, "\n".join(lines))
 
 
 @bot.message_handler(commands=["reset"])
@@ -29,7 +33,44 @@ def cmd_reset(message):
 
 @bot.message_handler(commands=["about"])
 def cmd_about(message):
-    bot.send_message(message.chat.id, f"Model  : {MODEL}\nStorage: Upstash Redis\nHosting: Vercel")
+    if HF_SPACE_ID:
+        provider = get_provider(message.from_user.id)
+        model_line = f"{MODEL} (openai)" if provider == "openai" else f"{HF_SPACE_ID} (hf)"
+    else:
+        model_line = MODEL
+    bot.send_message(message.chat.id, f"Model  : {model_line}\nStorage: Upstash Redis\nHosting: Vercel")
+
+
+if HF_SPACE_ID:
+    @bot.message_handler(commands=["model"])
+    def cmd_model(message):
+        parts = (message.text or "").split(maxsplit=1)
+        if len(parts) == 1:
+            current = get_provider(message.from_user.id)
+            bot.send_message(
+                message.chat.id,
+                f"Current provider: {current}\n\n"
+                "Options:\n"
+                "/model openai — Cerebras (fast, multilingual, with memory)\n"
+                "/model hf — ArmGPT (Armenian only, slow, no memory)",
+            )
+            return
+        choice = parts[1].strip().lower()
+        if choice not in ("openai", "hf"):
+            bot.send_message(message.chat.id, "Invalid choice. Use: /model openai or /model hf")
+            return
+        if not set_provider(message.from_user.id, choice):
+            bot.send_message(message.chat.id, "Could not save preference. Try again later.")
+            return
+        if choice == "hf":
+            bot.send_message(
+                message.chat.id,
+                "Switched to hf (ArmGPT).\n\n"
+                "Note: this model only understands Armenian, takes ~10s per reply, "
+                "and does not remember past messages.",
+            )
+        else:
+            bot.send_message(message.chat.id, "Switched to openai (Cerebras).")
 
 
 @bot.message_handler(func=lambda m: True)

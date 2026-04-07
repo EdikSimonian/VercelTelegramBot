@@ -80,6 +80,94 @@ def test_handle_message_none_text():
         mock_ask.assert_called_once_with(msg.from_user.id, "")
 
 
+# ── /model command ────────────────────────────────────────────────────────────
+
+def _import_cmd_model_with_hf_enabled():
+    """Re-import handlers module with HF_SPACE_ID set so cmd_model exists."""
+    import importlib
+    import bot.config
+    import bot.handlers
+    original = bot.config.HF_SPACE_ID
+    bot.config.HF_SPACE_ID = "fake/space"
+    # Also patch the import in handlers module (already imported via `from ... import HF_SPACE_ID`)
+    bot.handlers.HF_SPACE_ID = "fake/space"
+    importlib.reload(bot.handlers)
+    cmd_model = getattr(bot.handlers, "cmd_model", None)
+    # Restore
+    bot.config.HF_SPACE_ID = original
+    bot.handlers.HF_SPACE_ID = original
+    return cmd_model
+
+
+def test_cmd_model_no_args_shows_current():
+    cmd_model = _import_cmd_model_with_hf_enabled()
+    assert cmd_model is not None
+    with patch("bot.handlers.get_provider", return_value="openai"), \
+         patch("bot.handlers.bot") as mock_bot:
+        msg = make_message(text="/model")
+        cmd_model(msg)
+        sent = mock_bot.send_message.call_args[0][1]
+        assert "Current provider: openai" in sent
+        assert "/model openai" in sent
+        assert "/model hf" in sent
+
+
+def test_cmd_model_switch_to_hf():
+    cmd_model = _import_cmd_model_with_hf_enabled()
+    with patch("bot.handlers.set_provider", return_value=True) as mock_set, \
+         patch("bot.handlers.bot") as mock_bot:
+        msg = make_message(text="/model hf")
+        cmd_model(msg)
+        mock_set.assert_called_once_with(123, "hf")
+        sent = mock_bot.send_message.call_args[0][1]
+        assert "hf" in sent
+        assert "Armenian" in sent
+
+
+def test_cmd_model_switch_to_openai():
+    cmd_model = _import_cmd_model_with_hf_enabled()
+    with patch("bot.handlers.set_provider", return_value=True) as mock_set, \
+         patch("bot.handlers.bot") as mock_bot:
+        msg = make_message(text="/model openai")
+        cmd_model(msg)
+        mock_set.assert_called_once_with(123, "openai")
+        sent = mock_bot.send_message.call_args[0][1]
+        assert "openai" in sent
+
+
+def test_cmd_model_invalid_choice():
+    cmd_model = _import_cmd_model_with_hf_enabled()
+    with patch("bot.handlers.set_provider") as mock_set, \
+         patch("bot.handlers.bot") as mock_bot:
+        msg = make_message(text="/model bogus")
+        cmd_model(msg)
+        mock_set.assert_not_called()
+        assert "Invalid" in mock_bot.send_message.call_args[0][1]
+
+
+def test_cmd_model_redis_error_reports_failure():
+    cmd_model = _import_cmd_model_with_hf_enabled()
+    with patch("bot.handlers.set_provider", return_value=False), \
+         patch("bot.handlers.bot") as mock_bot:
+        msg = make_message(text="/model hf")
+        cmd_model(msg)
+        assert "Could not save" in mock_bot.send_message.call_args[0][1]
+
+
+def test_cmd_model_not_registered_without_hf_space_id():
+    """When HF_SPACE_ID is empty, cmd_model should not exist."""
+    import importlib
+    import bot.config
+    import bot.handlers
+    bot.config.HF_SPACE_ID = ""
+    bot.handlers.HF_SPACE_ID = ""
+    # reload() doesn't delete existing attributes, so clear it first
+    if hasattr(bot.handlers, "cmd_model"):
+        delattr(bot.handlers, "cmd_model")
+    importlib.reload(bot.handlers)
+    assert not hasattr(bot.handlers, "cmd_model")
+
+
 def test_handle_message_sends_typing():
     with patch("bot.handlers.should_respond", return_value=True), \
          patch("bot.handlers.is_rate_limited", return_value=False), \

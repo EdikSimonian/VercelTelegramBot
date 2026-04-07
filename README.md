@@ -278,3 +278,4 @@ make deploy    # deploy to Vercel production
 | `/help` | List all commands |
 | `/reset` | Clear your conversation history |
 | `/about` | Show model and hosting info |
+| `/model` | Switch AI provider (only available when `HF_SPACE_ID` is set) |

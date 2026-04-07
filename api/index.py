@@ -7,6 +7,12 @@ from bot.config import WEBHOOK_SECRET
 app = Flask(__name__)
 
 
+@app.route("/api/health")
+@app.route("/api/index")
+def health():
+    return "OK", 200
+
+
 @app.route("/api/webhook", methods=["POST"])
 def webhook():
     if WEBHOOK_SECRET:
