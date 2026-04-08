@@ -11,8 +11,9 @@ HF_LENGTH = 80
 HF_TEMPERATURE = 0.8
 HF_TOP_K = 40
 
-# ArmGPT (Modal) — OpenAI-compatible, fast (~3s), supports messages array
-ARMGPT_MAX_TOKENS = 200
+# ArmGPT (Modal) — OpenAI-compatible. Warm: ~3s for 100 tokens.
+# Cold-start adds ~20s, so smaller cap = better fit inside Telegram's webhook timeout.
+ARMGPT_MAX_TOKENS = 100
 
 
 def _call_openai(messages: list, retries: int = 3):
